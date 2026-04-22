@@ -17,7 +17,7 @@ export const commonProtectedRoutes : RouteConfig = {
 }
 
 export const memberProtectedRoutes : RouteConfig = {
-    pattern: [/^\/member\/dashboard/ ], // Matches any path that starts with /doctor/dashboard
+    pattern: [/^\/member\/dashboard/ ], // Matches any path that starts with /member/dashboard
     exact : []
 }
 
@@ -37,14 +37,12 @@ export const isRouteMatches = (pathname : string, routes : RouteConfig) => {
     return routes.pattern.some((pattern : RegExp) => pattern.test(pathname));
 }
 
-export const getRouteOwner = (pathname : string) : "ADMIN" | "DOCTOR" | "MEMBER" | "COMMON" | null => {
+export const getRouteOwner = (pathname : string) : "ADMIN" | "member" | "MEMBER" | "COMMON" | null => {
     if(isRouteMatches(pathname, memberProtectedRoutes)) {
         return "MEMBER";
     }
 
-    // if (isRouteMatches(pathname, superAdminProtectedRoutes)) {
-    //     return "SUPER_ADMIN";
-    // }
+
 
     if(isRouteMatches(pathname, adminProtectedRoutes)) {
         return "ADMIN";
