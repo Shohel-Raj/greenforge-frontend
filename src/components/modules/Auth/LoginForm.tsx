@@ -18,7 +18,6 @@ interface LoginFormProps {
 }
 
 const LoginForm = ({ redirectPath }: LoginFormProps) => {
-    // const queryClient = useQueryClient();
 
 
     const [serverError, setServerError] = useState<string | null>(null);

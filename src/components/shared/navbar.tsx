@@ -59,16 +59,16 @@ export default function Navbar() {
 
 const handleLogout = async () => {
   try {
-    // 🔥 instant UI update first
+    //  instant UI update first
     setCurrentUser(null);
 
-    // 🔥 close mobile menu if open
+    //  close mobile menu if open
     setOpen(false);
 
-    // 🔥 call backend logout
+    //  call backend logout
     await logoutAction();
 
-    // 🔥 refresh silently
+    //  refresh silently
     router.refresh();
   } catch (error) {
     console.error("Logout failed", error);
