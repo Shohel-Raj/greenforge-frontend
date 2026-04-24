@@ -57,11 +57,23 @@ export default function Navbar() {
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
 
-  const handleLogout = async () => {
+const handleLogout = async () => {
+  try {
+    // 🔥 instant UI update first
+    setCurrentUser(null);
+
+    // 🔥 close mobile menu if open
+    setOpen(false);
+
+    // 🔥 call backend logout
     await logoutAction();
-    router.push("/");
+
+    // 🔥 refresh silently
     router.refresh();
-  };
+  } catch (error) {
+    console.error("Logout failed", error);
+  }
+};
 
   return (
     <header className="sticky top-0 z-[100] w-full border-b bg-background/80 backdrop-blur-md">
@@ -201,7 +213,7 @@ function UserMenu({
         </motion.button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="z-[200] mt-3">
         <DropdownMenuItem >
           <Link href="/profile" className="flex gap-2 items-center">
             <User className="h-4 w-4" />
