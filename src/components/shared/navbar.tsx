@@ -2,31 +2,15 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { Menu, LogOut, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
-import {
-  NavigationMenu,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-} from "@/components/ui/navigation-menu";
-
-import {
-  Sheet,
-  SheetContent,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar";
-
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,19 +24,19 @@ type IUser = {
   image?: string;
 };
 
-/* ---------------- NAVBAR ---------------- */
+const MENU = [
+  { title: "Home", url: "/" },
+  { title: "Ideas", url: "/ideas" },
+  { title: "About", url: "/about-us" },
+];
 
+/* ---------------- NAVBAR ---------------- */
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
 
-  const user: IUser | null = null; // example: useUser()
-
-  const menu = [
-    { title: "Home", url: "/" },
-    { title: "Ideas", url: "/ideas" },
-    // { title: "About", url: "/about" },
-  ];
+  const user: IUser | null = null; // replace with your auth
 
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
@@ -60,7 +44,6 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       // await logoutUser();
-
       router.push("/");
       router.refresh();
     } catch (error) {
@@ -69,8 +52,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="border-b bg-background sticky top-0 z-50 backdrop-blur"
-    >
+    <header className="sticky top-0 z-[100] w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex w-11/12 md:w-10/12 items-center justify-between py-4">
 
         {/* LOGO */}
@@ -78,40 +60,41 @@ export default function Navbar() {
           GreenForge
         </Link>
 
-        {/* DESKTOP */}
+        {/* DESKTOP NAV */}
         <nav className="hidden lg:flex items-center gap-6">
-          <NavigationMenu>
-            <NavigationMenuList>
-              {menu.map((item) => (
-                <NavigationMenuItem key={item.title}>
-                  <NavigationMenuLink >
-                    <motion.div whileHover={{ scale: 1.05 }}>
-                      <Link
-                        href={item.url}
-                        className="relative px-4 py-2 text-sm font-medium rounded-md"
-                      >
-                        {item.title}
-
-                        {isActive(item.url) && (
-                          <motion.span
-                            layoutId="nav-active"
-                            className="absolute left-0 right-0 -bottom-1 h-[2px] bg-primary"
-                          />
-                        )}
-                      </Link>
-                    </motion.div>
-                  </NavigationMenuLink>
-                </NavigationMenuItem>
-              ))}
-            </NavigationMenuList>
-          </NavigationMenu>
+          {/* ✅ Plain ul — eliminates NavigationMenu's phantom viewport div */}
+          <ul className="flex items-center gap-1 list-none m-0 p-0">
+            {MENU.map((item) => (
+              <li key={item.title}>
+                <Link
+                  href={item.url}
+                  className="relative px-4 py-2 text-sm font-medium rounded-md inline-block"
+                >
+                  {item.title}
+                  {/* ✅ layout="position" — won't affect surrounding sizing on mount */}
+                  {isActive(item.url) && (
+                    <motion.span
+                      layoutId="desktopActiveIndicator"
+                      layout="position"
+                      className="absolute left-0 right-0 -bottom-1 h-[2px] bg-primary rounded-full"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
+                    />
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
 
           {!user ? (
             <>
-              <Button  variant="outline" size="sm">
+              <Button variant="outline" size="sm" >
                 <Link href="/login">Login</Link>
               </Button>
-              <Button  size="sm">
+              <Button size="sm" >
                 <Link href="/register">Register</Link>
               </Button>
             </>
@@ -120,93 +103,137 @@ export default function Navbar() {
           )}
         </nav>
 
-        {/* MOBILE */}
+        {/* MOBILE TRIGGER */}
         <div className="flex items-center gap-2 lg:hidden">
-          <Sheet>
+          <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger >
-              <Button size="icon" variant="outline">
+              <Button size="icon" variant="outline" aria-label="Open menu">
                 <Menu className="size-4" />
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="p-6">
-              <motion.div
-                initial={{ x: 100, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
-                transition={{ duration: 0.4 }}
-                className="flex flex-col gap-4"
-              >
-                {menu.map((item) => (
-                  <div key={item.title}
+            <SheetContent side="right" className="z-[200] p-0 flex flex-col">
+              <AnimatePresence>
+                {open && (
+                  <motion.div
+                    key="mobile-menu"
+                    initial={{ opacity: 0, x: 30 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 30 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="flex flex-col gap-1 px-4 pt-14 pb-6 h-full"
                   >
-                    <Link
-                      href={item.url}
-                      className={cn(
-                        "block px-3 py-2 rounded-md",
-                        isActive(item.url)
-                          ? "bg-muted"
-                          : "hover:bg-muted"
-                      )}
-                    >
-                      {item.title}
-                    </Link>
-                  </div>
-                ))}
+                    {/* Menu Items */}
+                    <div className="flex flex-col gap-1">
+                      {MENU.map((item) => (
+                        <Link
+                          key={item.title}
+                          href={item.url}
+                          onClick={() => setOpen(false)}
+                          className="relative flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors overflow-hidden"
+                        >
+                          {isActive(item.url) && (
+                            <motion.span
+                              layoutId="mobileActiveBackground"
+                              className="absolute inset-0 bg-muted rounded-md"
+                              transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 35,
+                              }}
+                            />
+                          )}
+                          {isActive(item.url) && (
+                            <motion.span
+                              layoutId="mobileActiveBar"
+                              className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full"
+                              transition={{
+                                type: "spring",
+                                stiffness: 400,
+                                damping: 35,
+                              }}
+                            />
+                          )}
+                          <span
+                            className={cn(
+                              "relative z-10",
+                              isActive(item.url)
+                                ? "text-foreground font-semibold"
+                                : "text-muted-foreground"
+                            )}
+                          >
+                            {item.title}
+                          </span>
+                        </Link>
+                      ))}
+                    </div>
 
-                {!user ? (
-                  <>
-                    <Button  variant="outline">
-                      <Link href="/login">Login</Link>
-                    </Button>
-                    <Button >
-                      <Link href="/register">Register</Link>
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="destructive" onClick={handleLogout}>
-                    Logout
-                  </Button>
+                    {/* Auth Buttons */}
+                    <div className="mt-auto border-t pt-4 flex flex-col gap-2">
+                      {!user ? (
+                        <>
+                          <Button variant="outline" >
+                            <Link href="/login" onClick={() => setOpen(false)}>
+                              Login
+                            </Link>
+                          </Button>
+                          <Button >
+                            <Link href="/register" onClick={() => setOpen(false)}>
+                              Register
+                            </Link>
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="destructive"
+                          onClick={() => {
+                            setOpen(false);
+                            handleLogout();
+                          }}
+                        >
+                          Logout
+                        </Button>
+                      )}
+                    </div>
+                  </motion.div>
                 )}
-              </motion.div>
+              </AnimatePresence>
             </SheetContent>
           </Sheet>
         </div>
+
       </div>
     </header>
   );
 }
 
 /* ---------------- USER MENU ---------------- */
-
-function UserMenu({
-  user,
-  onLogout,
-}: {
-  user: IUser;
-  onLogout: () => void;
-}) {
+function UserMenu({ user, onLogout }: { user: IUser; onLogout: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger >
-        <motion.button whileHover={{ scale: 1.1 }}>
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           <Avatar>
             <AvatarImage src={user.image || ""} />
-            <AvatarFallback>
-              {user.name?.[0] ?? "U"}
-            </AvatarFallback>
+            <AvatarFallback>{user.name?.[0] ?? "U"}</AvatarFallback>
           </Avatar>
         </motion.button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem>
-          <Link href="/profile" className="flex gap-2 items-center">
+      <DropdownMenuContent align="end" className="z-[150]">
+        <DropdownMenuItem >
+          <Link
+            href="/profile"
+            className="flex gap-2 items-center cursor-pointer"
+          >
             <User className="h-4 w-4" />
             Profile
           </Link>
         </DropdownMenuItem>
-
-        <DropdownMenuItem onClick={onLogout}>
+        <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
           <LogOut className="h-4 w-4 mr-2" />
           Logout
         </DropdownMenuItem>
