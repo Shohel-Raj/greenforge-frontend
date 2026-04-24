@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Menu, LogOut, User } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -17,6 +16,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+import { getUserInfo } from "@/services/auth.services";
+import { logoutAction } from "@/app/(commonLayout)/(authRouteGroup)/login/_action";
 
 /* ---------------- TYPES ---------------- */
 type IUser = {
@@ -30,29 +32,39 @@ const MENU = [
   { title: "About", url: "/about-us" },
 ];
 
-/* ---------------- NAVBAR ---------------- */
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [open, setOpen] = useState(false);
 
-  const user: IUser | null = null; // replace with your auth
+  const [open, setOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<IUser | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const user = await getUserInfo();
+        setCurrentUser(user);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadUser();
+  }, []);
 
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
 
   const handleLogout = async () => {
-    try {
-      // await logoutUser();
-      router.push("/");
-      router.refresh();
-    } catch (error) {
-      console.error("Logout failed", error);
-    }
+    await logoutAction();
+    router.push("/");
+    router.refresh();
   };
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b bg-background/80 backdrop-blur-md supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-[100] w-full border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex w-11/12 md:w-10/12 items-center justify-between py-4">
 
         {/* LOGO */}
@@ -60,28 +72,21 @@ export default function Navbar() {
           GreenForge
         </Link>
 
-        {/* DESKTOP NAV */}
+        {/* DESKTOP */}
         <nav className="hidden lg:flex items-center gap-6">
-          {/* ✅ Plain ul — eliminates NavigationMenu's phantom viewport div */}
-          <ul className="flex items-center gap-1 list-none m-0 p-0">
+          <ul className="flex items-center gap-1">
             {MENU.map((item) => (
               <li key={item.title}>
                 <Link
                   href={item.url}
-                  className="relative px-4 py-2 text-sm font-medium rounded-md inline-block"
+                  className="relative px-4 py-2 text-sm font-medium rounded-md"
                 >
                   {item.title}
-                  {/* ✅ layout="position" — won't affect surrounding sizing on mount */}
                   {isActive(item.url) && (
                     <motion.span
                       layoutId="desktopActiveIndicator"
                       layout="position"
-                      className="absolute left-0 right-0 -bottom-1 h-[2px] bg-primary rounded-full"
-                      transition={{
-                        type: "spring",
-                        stiffness: 380,
-                        damping: 30,
-                      }}
+                      className="absolute left-0 right-0 -bottom-1 h-[2px] bg-primary"
                     />
                   )}
                 </Link>
@@ -89,90 +94,58 @@ export default function Navbar() {
             ))}
           </ul>
 
-          {!user ? (
+          {/* 🔥 ONLY AUTH PART HANDLES LOADING */}
+          {loading ? (
+            <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
+          ) : !currentUser ? (
             <>
-              <Button variant="outline" size="sm" >
+              <Button  variant="outline" size="sm">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button size="sm" >
+              <Button  size="sm">
                 <Link href="/register">Register</Link>
               </Button>
             </>
           ) : (
-            <UserMenu user={user} onLogout={handleLogout} />
+            <UserMenu user={currentUser} onLogout={handleLogout} />
           )}
         </nav>
 
-        {/* MOBILE TRIGGER */}
+        {/* MOBILE */}
         <div className="flex items-center gap-2 lg:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger >
-              <Button size="icon" variant="outline" aria-label="Open menu">
+              <Button size="icon" variant="outline">
                 <Menu className="size-4" />
               </Button>
             </SheetTrigger>
 
-            <SheetContent side="right" className="z-[200] p-0 flex flex-col">
+            <SheetContent side="right" className="p-6 flex flex-col">
               <AnimatePresence>
                 {open && (
                   <motion.div
-                    key="mobile-menu"
-                    initial={{ opacity: 0, x: 30 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 30 }}
-                    transition={{ duration: 0.22, ease: "easeOut" }}
-                    className="flex flex-col gap-1 px-4 pt-14 pb-6 h-full"
+                    initial={{ x: 40, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: 40, opacity: 0 }}
+                    className="flex flex-col gap-4 h-full"
                   >
-                    {/* Menu Items */}
-                    <div className="flex flex-col gap-1">
-                      {MENU.map((item) => (
-                        <Link
-                          key={item.title}
-                          href={item.url}
-                          onClick={() => setOpen(false)}
-                          className="relative flex items-center px-3 py-2.5 rounded-md text-sm font-medium transition-colors overflow-hidden"
-                        >
-                          {isActive(item.url) && (
-                            <motion.span
-                              layoutId="mobileActiveBackground"
-                              className="absolute inset-0 bg-muted rounded-md"
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 35,
-                              }}
-                            />
-                          )}
-                          {isActive(item.url) && (
-                            <motion.span
-                              layoutId="mobileActiveBar"
-                              className="absolute left-0 top-1 bottom-1 w-[3px] bg-primary rounded-full"
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 35,
-                              }}
-                            />
-                          )}
-                          <span
-                            className={cn(
-                              "relative z-10",
-                              isActive(item.url)
-                                ? "text-foreground font-semibold"
-                                : "text-muted-foreground"
-                            )}
-                          >
-                            {item.title}
-                          </span>
-                        </Link>
-                      ))}
-                    </div>
+                    {MENU.map((item) => (
+                      <Link
+                        key={item.title}
+                        href={item.url}
+                        onClick={() => setOpen(false)}
+                        className="px-3 py-2 rounded-md"
+                      >
+                        {item.title}
+                      </Link>
+                    ))}
 
-                    {/* Auth Buttons */}
-                    <div className="mt-auto border-t pt-4 flex flex-col gap-2">
-                      {!user ? (
+                    <div className="mt-auto flex flex-col gap-2">
+                      {loading ? (
+                        <div className="h-10 bg-muted animate-pulse rounded-md" />
+                      ) : !currentUser ? (
                         <>
-                          <Button variant="outline" >
+                          <Button  variant="outline">
                             <Link href="/login" onClick={() => setOpen(false)}>
                               Login
                             </Link>
@@ -208,32 +181,35 @@ export default function Navbar() {
 }
 
 /* ---------------- USER MENU ---------------- */
-function UserMenu({ user, onLogout }: { user: IUser; onLogout: () => void }) {
+function UserMenu({
+  user,
+  onLogout,
+}: {
+  user: IUser;
+  onLogout: () => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger >
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          className="rounded-full outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
+        <motion.button whileHover={{ scale: 1.05 }}>
           <Avatar>
             <AvatarImage src={user.image || ""} />
-            <AvatarFallback>{user.name?.[0] ?? "U"}</AvatarFallback>
+            <AvatarFallback>
+              {user.name?.[0] ?? "U"}
+            </AvatarFallback>
           </Avatar>
         </motion.button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="z-[150]">
+      <DropdownMenuContent align="end">
         <DropdownMenuItem >
-          <Link
-            href="/profile"
-            className="flex gap-2 items-center cursor-pointer"
-          >
+          <Link href="/profile" className="flex gap-2 items-center">
             <User className="h-4 w-4" />
             Profile
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={onLogout} className="cursor-pointer">
+
+        <DropdownMenuItem onClick={onLogout}>
           <LogOut className="h-4 w-4 mr-2" />
           Logout
         </DropdownMenuItem>

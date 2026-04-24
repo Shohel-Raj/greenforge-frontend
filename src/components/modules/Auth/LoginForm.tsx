@@ -1,4 +1,5 @@
 "use client"
+import { loginAction } from "@/app/(commonLayout)/(authRouteGroup)/login/_action";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import AppField from "@/components/shared/form/AppField";
 import AppSubmitButton from "@/components/shared/form/AppSubmitButton";
@@ -18,23 +19,7 @@ interface LoginFormProps {
 
 const LoginForm = ({ redirectPath }: LoginFormProps) => {
     // const queryClient = useQueryClient();
-    const loginAction = async (payload : ILoginPayload, redirectPath ?: string) => {
-        const response = await fetch("/api/auth/login", {
-            method : "POST",
-            headers : {
-                "Content-Type" : "application/json"
-            },
-            body : JSON.stringify(payload)
-        });
 
-        if(!response.ok){
-            const errorData = await response.json();
-            throw new Error(errorData.message || "Login failed");
-        } else {
-            const data = await response.json();
-            return data;
-        }
-    };
 
     const [serverError, setServerError] = useState<string | null>(null);
     const [showPassword, setShowPassword] = useState(false);
