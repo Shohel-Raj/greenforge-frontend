@@ -12,9 +12,7 @@ export interface ILoginResponse {
   };
 }
 export interface IRegisterResponse {
-  success: boolean;
-  message?: string;
-  data: {
+
     token: string | null;
     accessToken: string;
     refreshToken: string;
@@ -41,7 +39,7 @@ export interface IRegisterResponse {
       createdAt: string;
       updatedAt: string;
     };
-  };
+
 }
 
 export interface IUser {

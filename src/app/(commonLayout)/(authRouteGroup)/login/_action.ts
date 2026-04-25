@@ -97,7 +97,7 @@ export const logoutAction = async (): Promise<void> => {
 
 export const registerAction = async (
   payload: IRegisterPayload,
-): Promise<IRegisterResponse | ApiErrorResponse> => {
+): Promise<IRegisterResponse | ApiErrorResponse > => {
   const parsed = RegisterZodSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -117,9 +117,8 @@ export const registerAction = async (
 
 
     // res = { token, accessToken, refreshToken, user, member }
-
     // ✅ Check user directly, not res.data
-    if (!response?.data?.data.user || !response.success) {
+    if (!response?.data.user || !response.data.accessToken) {
       return { success: false, message: "Invalid server response" };
     }
 

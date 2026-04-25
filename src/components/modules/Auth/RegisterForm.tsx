@@ -26,6 +26,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 import { IRegisterPayload } from "@/zod/auth.validation";
 import { registerAction } from "@/app/(commonLayout)/(authRouteGroup)/login/_action";
+import { IRegisterResponse } from "@/types/auth.types";
 
 interface RegisterFormProps {
   redirectPath?: string;
@@ -68,14 +69,18 @@ const RegisterForm = ({ redirectPath }: RegisterFormProps) => {
     };
 
    const res = await mutateAsync(payload);
-if (!res || res.success === false) {
-  setServerError(res?.message || "Registration failed");
+
+
+const user = (res as IRegisterResponse).user;
+if (!user) {
+  setServerError("User data is missing in the response");
   return;
 }
 
-// ✅ user is on res.data, not res.data.user
-const user = res.data.user;
-
+if (!user) {
+  setServerError("User data is missing in the response");
+  return;
+}
 if (!user.emailVerified) {
   router.push(`/verify-email?email=${user.email}`);
 } else {
