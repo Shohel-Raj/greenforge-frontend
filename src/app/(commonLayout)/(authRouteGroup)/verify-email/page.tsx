@@ -1,7 +1,8 @@
+import VerifyEmailForm from "@/components/modules/Auth/verifyEmailForm"
 
 const VerifyEmailPage = () => {
   return (
-    <div>VerifyEmailPage</div>
+    <VerifyEmailForm/>
   )
 }
 
