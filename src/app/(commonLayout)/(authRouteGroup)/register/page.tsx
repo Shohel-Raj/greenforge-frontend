@@ -1,7 +1,9 @@
+import RegisterForm from "@/components/modules/Auth/RegisterForm";
 
-const RegisterPage = () => {
+const RegisterPage = async () => {
+  const redirectPath =  '/login';
   return (
-    <div>RegisterPage</div>
+    <RegisterForm redirectPath={redirectPath}/>
   )
 }
 

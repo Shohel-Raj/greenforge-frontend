@@ -92,6 +92,19 @@ const httpPost = async <TData>(endpoint: string, data: unknown, options?: ApiReq
         throw error;
     }
 }
+const httpPostSingle = async <TData>(endpoint: string,  options?: ApiRequestOptions) : Promise<ApiResponse<TData>> => {
+    try {
+        const instance = await axiosInstance();
+        const response = await instance.post<ApiResponse<TData>>(endpoint, {
+            params: options?.params,
+            headers: options?.headers,
+        });
+        return response.data;
+    } catch (error) {
+        console.error(`POST request to ${endpoint} failed:`, error);
+        throw error;
+    }
+}
 
 const httpPut = async <TData>(endpoint: string, data: unknown, options?: ApiRequestOptions) : Promise<ApiResponse<TData>> => {
     try {
@@ -142,4 +155,5 @@ export const httpClient = {
     put: httpPut,
     patch: httpPatch,
     delete: httpDelete,
+    postSingle: httpPostSingle,
 }

@@ -9,8 +9,13 @@ import {
 import { httpClient } from "@/lib/axios/httpClient";
 import { setTokenInCookies } from "@/lib/tokenUtils";
 import { ApiErrorResponse } from "@/types/api.types";
-import { ILoginResponse } from "@/types/auth.types";
-import { ILoginPayload, loginZodSchema } from "@/zod/auth.validation";
+import { ILoginResponse, IRegisterResponse } from "@/types/auth.types";
+import {
+  ILoginPayload,
+  IRegisterPayload,
+  loginZodSchema,
+  RegisterZodSchema,
+} from "@/zod/auth.validation";
 import { redirect } from "next/navigation";
 
 export const loginAction = async (
@@ -77,7 +82,7 @@ export const loginAction = async (
 
 export const logoutAction = async (): Promise<void> => {
   try {
-    await httpClient.post("/auth/logout", null);
+    await httpClient.postSingle("/auth/logout");
   } catch (error) {
     console.error("Logout API call failed:", error);
   } finally {
@@ -86,5 +91,47 @@ export const logoutAction = async (): Promise<void> => {
       setTokenInCookies("refreshToken", "", -1),
       setTokenInCookies("better-auth.session_token", "", -1),
     ]);
-    redirect("/");}
+    redirect("/");
+  }
+};
+
+export const registerAction = async (
+  payload: IRegisterPayload,
+): Promise<IRegisterResponse | ApiErrorResponse> => {
+  const parsed = RegisterZodSchema.safeParse(payload);
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      message: parsed.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  try {
+    console.log("1. Calling API...");
+
+    const response = await httpClient.post<IRegisterResponse>(
+      "/auth/register",
+      parsed.data,
+    );
+
+
+    // res = { token, accessToken, refreshToken, user, member }
+
+    // ✅ Check user directly, not res.data
+    if (!response?.data?.data.user || !response.success) {
+      return { success: false, message: "Invalid server response" };
+    }
+
+    return response.data;
+
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message || error?.message || "Register failed";
+
+    return {
+      success: false,
+      message,
+    };
+  }
 };
