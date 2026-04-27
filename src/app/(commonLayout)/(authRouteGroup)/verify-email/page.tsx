@@ -1,9 +1,16 @@
-import VerifyEmailForm from "@/components/modules/Auth/verifyEmailForm"
+import VerifyEmailForm from "@/components/modules/Auth/verifyEmailForm";
 
-const VerifyEmailPage = () => {
-  return (
-    <VerifyEmailForm/>
-  )
+interface VerifyEmailPageProps {
+  searchParams: {
+    email?: string;
+  };
 }
 
-export default VerifyEmailPage
+const VerifyEmailPage = async ({ searchParams }: VerifyEmailPageProps) => {
+
+  const {email} =await searchParams;
+
+  return <VerifyEmailForm email={email} />;
+};
+
+export default VerifyEmailPage;

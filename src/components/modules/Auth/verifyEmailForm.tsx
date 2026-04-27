@@ -2,7 +2,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -22,19 +22,36 @@ import { useMutation } from "@tanstack/react-query";
 
 import { IVerifyEmailPayload } from "@/zod/auth.validation";
 import { verifyEmailAction } from "@/app/(commonLayout)/(authRouteGroup)/verify-email/_action";
-import { httpClient } from "@/lib/axios/httpClient";
 
 interface EmailVerifyProps {
   email?: string;
 }
 
+const OTP_LENGTH = 6;
+const RESEND_TIME = 60;
+
 const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
   const router = useRouter();
+console.log("this is from form" ,email)
+  // OTP as array
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(""));
+  const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
-  // ✅ STATE
-  const [otp, setOtp] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+
+  const [timer, setTimer] = useState(RESEND_TIME);
+
+  // ✅ TIMER
+  useEffect(() => {
+    if (timer === 0) return;
+
+    const interval = setInterval(() => {
+      setTimer((prev) => prev - 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timer]);
 
   // ✅ VERIFY MUTATION
   const { mutateAsync, isPending } = useMutation({
@@ -42,13 +59,51 @@ const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
       verifyEmailAction(payload),
   });
 
-  // ✅ VERIFY HANDLER
+  // ✅ HANDLE INPUT CHANGE
+  const handleChange = (value: string, index: number) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+
+    // Move to next
+    if (value && index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  // ✅ HANDLE BACKSPACE
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+  };
+
+  // ✅ HANDLE PASTE
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const paste = e.clipboardData.getData("text").slice(0, OTP_LENGTH);
+
+    if (!/^\d+$/.test(paste)) return;
+
+    const newOtp = paste.split("");
+    setOtp([...newOtp, ...Array(OTP_LENGTH - newOtp.length).fill("")]);
+
+    inputsRef.current[newOtp.length - 1]?.focus();
+  };
+
+  // ✅ VERIFY
   const handleVerify = async () => {
     setError(null);
     setSuccess(null);
 
-    if (!otp || otp.length < 4) {
-      setError("Please enter a valid OTP");
+    const otpValue = otp.join("");
+
+    if (otpValue.length < OTP_LENGTH) {
+      setError("Please enter complete OTP");
       return;
     }
 
@@ -58,15 +113,13 @@ const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
     }
 
     try {
-      const res = await mutateAsync({ email, otp });
+      const res = await mutateAsync({ email, otp: otpValue });
 
-      // ✅ Handle ApiErrorResponse
       if ("success" in res && res.success === false) {
         setError(res.message);
         return;
       }
 
-      // ✅ Success
       setSuccess("Email verified successfully 🎉");
 
       setTimeout(() => {
@@ -78,24 +131,25 @@ const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
   };
 
   // ✅ RESEND OTP
-  const handleResend = async () => {
-    setError(null);
-    setSuccess(null);
+  // const handleResend = async () => {
+  //   setError(null);
+  //   setSuccess(null);
 
-    if (!email) {
-      setError("Email is missing");
-      return;
-    }
+  //   if (!email) {
+  //     setError("Email is missing");
+  //     return;
+  //   }
 
-    try {
-      await httpClient.post("/auth/resend-otp", { email });
-      setSuccess("OTP resent successfully");
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.message || "Failed to resend OTP"
-      );
-    }
-  };
+  //   try {
+  //     await httpClient.post("/auth/resend-otp", { email });
+  //     setSuccess("OTP resent successfully");
+  //     setTimer(RESEND_TIME);
+  //   } catch (err: any) {
+  //     setError(
+  //       err?.response?.data?.message || "Failed to resend OTP"
+  //     );
+  //   }
+  // };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
@@ -108,18 +162,31 @@ const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
           <CardDescription>
             Enter the OTP sent to <br />
             <span className="font-medium text-foreground">
-              {email}
+              {email || "your email"}
             </span>
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* OTP INPUT */}
-          <Input
-            placeholder="Enter OTP"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value)}
-          />
+          {/* OTP INPUTS */}
+          <div className="flex justify-center gap-2">
+            {otp.map((digit, index) => (
+              <Input
+                key={index}
+                ref={(el) => {
+                  inputsRef.current[index] = el;
+                }}
+                value={digit}
+                onChange={(e) =>
+                  handleChange(e.target.value, index)
+                }
+                onKeyDown={(e) => handleKeyDown(e, index)}
+                onPaste={handlePaste}
+                maxLength={1}
+                className="w-12 h-12 text-center text-lg font-bold"
+              />
+            ))}
+          </div>
 
           {/* SUCCESS */}
           {success && (
@@ -152,13 +219,16 @@ const VerifyEmailForm = ({ email }: EmailVerifyProps) => {
           </Button>
 
           {/* RESEND */}
-          <Button
+          {/* <Button
             variant="outline"
             className="w-full"
             onClick={handleResend}
+            disabled={timer > 0}
           >
-            Resend OTP
-          </Button>
+            {timer > 0
+              ? `Resend OTP in ${timer}s`
+              : "Resend OTP"}
+          </Button> */}
         </CardContent>
       </Card>
     </div>
