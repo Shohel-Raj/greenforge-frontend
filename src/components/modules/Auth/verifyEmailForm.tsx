@@ -120,7 +120,7 @@ console.log("this is from form" ,email)
         return;
       }
 
-      setSuccess("Email verified successfully 🎉");
+      setSuccess("Email verified successfully ");
 
       setTimeout(() => {
         router.push("/login");

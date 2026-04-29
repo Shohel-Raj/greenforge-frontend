@@ -1,11 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server";
 
-import {
-  getDefaultDashboardRoute,
-  isValidRedirectForRole,
-  UserRole,
-} from "@/lib/authUtils";
+import { getDefaultDashboardRoute, isValidRedirectForRole, UserRole } from "@/lib/authUtils";
 import { httpClient } from "@/lib/axios/httpClient";
 import { setTokenInCookies } from "@/lib/tokenUtils";
 import { ApiErrorResponse } from "@/types/api.types";
@@ -25,12 +21,12 @@ export const loginAction = async (
   const parsedPayload = loginZodSchema.safeParse(payload);
 
   if (!parsedPayload.success) {
-    const firstError = parsedPayload.error.issues[0].message || "Invalid input";
     return {
       success: false,
-      message: firstError,
+      message: parsedPayload.error.issues[0].message || "Invalid input",
     };
   }
+
   try {
     const response = await httpClient.post<ILoginResponse>(
       "/auth/login",
@@ -39,43 +35,35 @@ export const loginAction = async (
 
     const { accessToken, refreshToken, token, user } = response.data;
     const { role, emailVerified } = user;
+
     await setTokenInCookies("accessToken", accessToken);
     await setTokenInCookies("refreshToken", refreshToken);
-    await setTokenInCookies("better-auth.session_token", token, 24 * 60 * 60); // 1 day in seconds
+    await setTokenInCookies("better-auth.session_token", token, 24 * 60 * 60);
 
+    // ✅ EMAIL CHECK FIRST
     if (!emailVerified) {
-      redirect("/verify-email");
-    } else {
-      // redirect(redirectPath || "/dashboard");
-      const targetPath =
-        redirectPath && isValidRedirectForRole(redirectPath, role as UserRole)
-          ? redirectPath
-          : getDefaultDashboardRoute(role as UserRole);
-
-      redirect(targetPath);
+      redirect(`/verify-email?email=${payload.email}`);
     }
+
+    // ✅ SAFE REDIRECT PATH
+    const targetPath =
+      redirectPath && isValidRedirectForRole(redirectPath, role as UserRole)
+        ? redirectPath
+        : getDefaultDashboardRoute(role as UserRole);
+
+    console.log("targetPath:", targetPath);
+
+    redirect(targetPath);
+
   } catch (error: any) {
-    console.log(error, "error");
-    if (
-      error &&
-      typeof error === "object" &&
-      "digest" in error &&
-      typeof error.digest === "string" &&
-      error.digest.startsWith("NEXT_REDIRECT")
-    ) {
+    // ❗ IMPORTANT: let Next.js redirect escape
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
       throw error;
     }
 
-    if (
-      error &&
-      error.response &&
-      error.response.data.message === "Email not verified"
-    ) {
-      redirect(`/verify-email?email=${payload.email}`);
-    }
     return {
       success: false,
-      message: `Login failed: ${error.message}`,
+      message: error?.response?.data?.message || `Login failed`,
     };
   }
 };
