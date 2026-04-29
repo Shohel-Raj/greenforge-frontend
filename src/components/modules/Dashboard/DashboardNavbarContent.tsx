@@ -7,6 +7,7 @@ import { NavSection } from "@/types/dashboard.types";
 import { UserInfo } from "@/types/user.types";
 import { Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
+import UserDropdown from "./UserDropdown";
 
 interface DashboardNavbarProps {
   userInfo: UserInfo;
@@ -63,7 +64,7 @@ const DashboardNavbarContent = ({
         {/* Notification */}
         <div>notification</div>
         {/* User Dropdown  */}
-        <div>user</div>
+          <UserDropdown userInfo={userInfo}/>
       </div>
     </div>
   );
