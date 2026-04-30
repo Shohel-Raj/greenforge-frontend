@@ -8,6 +8,8 @@ import { UserInfo } from "@/types/user.types";
 import { Menu, Search } from "lucide-react";
 import { useEffect, useState } from "react";
 import UserDropdown from "./UserDropdown";
+import NotificationDropdown from "./NotificationDropdown";
+import DashboardMobileSidebar from "./DashboardMobileSidebar";
 
 interface DashboardNavbarProps {
   userInfo: UserInfo;
@@ -47,7 +49,7 @@ const DashboardNavbarContent = ({
         </SheetTrigger>
 
         <SheetContent side="left" className="w-64 p-0">
-          <div>dashboard mobile sidebar</div>
+          <DashboardMobileSidebar dashboardHome={dashboardHome} navItems={navItems} userInfo={userInfo}/>
         </SheetContent>
       </Sheet>
 
@@ -62,7 +64,7 @@ const DashboardNavbarContent = ({
       {/* Right Side Actions */}
       <div className="flex items-center gap-2">
         {/* Notification */}
-        <div>notification</div>
+        <NotificationDropdown/>
         {/* User Dropdown  */}
           <UserDropdown userInfo={userInfo}/>
       </div>
