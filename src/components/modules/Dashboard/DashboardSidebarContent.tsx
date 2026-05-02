@@ -21,6 +21,7 @@ interface DashboardSidebarContentProps {
 
 const DashboardSidebarContent = ({dashboardHome, navItems, userInfo} : DashboardSidebarContentProps) => {
     const pathname = usePathname()
+    console.log(pathname)
   return (
     <div className="hidden md:flex h-full w-64 flex-col border-r bg-card overflow-y-auto">
       {/* Logo / Brand */}
@@ -45,6 +46,7 @@ const DashboardSidebarContent = ({dashboardHome, navItems, userInfo} : Dashboard
                 {section.items.map((item, id) => {
                   const isActive = pathname === item.href;
                   // Icon Mapper Function
+                  console.log(isActive)
                   const Icon = getIconComponent(item.icon);
 
                   return (

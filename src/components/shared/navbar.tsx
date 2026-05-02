@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-import { Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User, LayoutDashboard } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -57,28 +57,27 @@ export default function Navbar() {
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
 
-const handleLogout = async () => {
-  try {
-    //  instant UI update first
-    setCurrentUser(null);
+  const handleLogout = async () => {
+    try {
+      //  instant UI update first
+      setCurrentUser(null);
 
-    //  close mobile menu if open
-    setOpen(false);
+      //  close mobile menu if open
+      setOpen(false);
 
-    //  call backend logout
-    await logoutAction();
+      //  call backend logout
+      await logoutAction();
 
-    //  refresh silently
-    router.refresh();
-  } catch (error) {
-    console.error("Logout failed", error);
-  }
-};
+      //  refresh silently
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-[100] w-full border-b bg-background/80 backdrop-blur-md">
       <div className="mx-auto flex w-11/12 md:w-10/12 items-center justify-between py-4">
-
         {/* LOGO */}
         <Link href="/" className="font-bold text-lg">
           GreenForge
@@ -111,10 +110,10 @@ const handleLogout = async () => {
             <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
           ) : !currentUser ? (
             <>
-              <Button  variant="outline" size="sm">
+              <Button variant="outline" size="sm">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button  size="sm">
+              <Button size="sm">
                 <Link href="/register">Register</Link>
               </Button>
             </>
@@ -126,7 +125,7 @@ const handleLogout = async () => {
         {/* MOBILE */}
         <div className="flex items-center gap-2 lg:hidden">
           <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger >
+            <SheetTrigger>
               <Button size="icon" variant="outline">
                 <Menu className="size-4" />
               </Button>
@@ -157,13 +156,16 @@ const handleLogout = async () => {
                         <div className="h-10 bg-muted animate-pulse rounded-md" />
                       ) : !currentUser ? (
                         <>
-                          <Button  variant="outline">
+                          <Button variant="outline">
                             <Link href="/login" onClick={() => setOpen(false)}>
                               Login
                             </Link>
                           </Button>
-                          <Button >
-                            <Link href="/register" onClick={() => setOpen(false)}>
+                          <Button>
+                            <Link
+                              href="/register"
+                              onClick={() => setOpen(false)}
+                            >
                               Register
                             </Link>
                           </Button>
@@ -186,38 +188,37 @@ const handleLogout = async () => {
             </SheetContent>
           </Sheet>
         </div>
-
       </div>
     </header>
   );
 }
 
 /* ---------------- USER MENU ---------------- */
-function UserMenu({
-  user,
-  onLogout,
-}: {
-  user: IUser;
-  onLogout: () => void;
-}) {
+function UserMenu({ user, onLogout }: { user: IUser; onLogout: () => void }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger >
+      <DropdownMenuTrigger>
         <motion.button whileHover={{ scale: 1.05 }}>
           <Avatar>
             <AvatarImage src={user.image || ""} />
-            <AvatarFallback>
-              {user.name?.[0] ?? "U"}
-            </AvatarFallback>
+            <AvatarFallback>{user.name?.[0] ?? "U"}</AvatarFallback>
           </Avatar>
         </motion.button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="z-[200] mt-3">
-        <DropdownMenuItem >
-          <Link href="/profile" className="flex gap-2 items-center">
+        <DropdownMenuItem asChild>
+          <Link href="/my-profile" className="flex gap-2 items-center">
             <User className="h-4 w-4" />
             Profile
+          </Link>
+        </DropdownMenuItem>
+
+        {/* Dashboard */}
+        <DropdownMenuItem asChild>
+          <Link href="/dashboard" className="flex gap-2 items-center">
+            <LayoutDashboard className="h-4 w-4" />
+            Dashboard
           </Link>
         </DropdownMenuItem>
 
