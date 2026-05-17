@@ -13,11 +13,16 @@ import {
   RegisterZodSchema,
 } from "@/zod/auth.validation";
 import { redirect } from "next/navigation";
+export interface ActionResult {
+  success: boolean;
+  redirectTo?: string;
+  data?: any;
+}
 
 export const loginAction = async (
   payload: ILoginPayload,
   redirectPath?: string,
-): Promise<ILoginResponse | ApiErrorResponse> => {
+): Promise<ILoginResponse | ApiErrorResponse | ActionResult> => {
   const parsedPayload = loginZodSchema.safeParse(payload);
 
   if (!parsedPayload.success) {
@@ -43,7 +48,7 @@ export const loginAction = async (
     // ✅ EMAIL CHECK FIRST
     if (!emailVerified) {
       redirect(`/verify-email?email=${payload.email}`);
-    }
+    }else {
 
     // ✅ SAFE REDIRECT PATH
     const targetPath =
@@ -51,15 +56,18 @@ export const loginAction = async (
         ? redirectPath
         : getDefaultDashboardRoute(role as UserRole);
 
-    console.log("targetPath:", targetPath);
-
     redirect(targetPath);
-
+    }
   } catch (error: any) {
     // ❗ IMPORTANT: let Next.js redirect escape
-    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
-      throw error;
-    }
+    console.log(error, "error");
+        if(error && typeof error === "object" && "digest" in error && typeof error.digest === "string" && error.digest.startsWith("NEXT_REDIRECT")){
+            throw error;
+        }
+
+        if (error && error.response && error.response.data.message === "Email not verified") {
+            redirect(`/verify-email?email=${payload.email}`);
+        }
 
     return {
       success: false,

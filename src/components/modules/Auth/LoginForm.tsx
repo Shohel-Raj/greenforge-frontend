@@ -45,7 +45,6 @@ const LoginForm = ({ redirectPath }: LoginFormProps) => {
       setServerError(null);
       try {
         const result = await mutateAsync(value) as any;
-        // ✅ Email not verified or other redirect needed
         if (!result.success) {
           if (result.redirectTo) {
             router.push(result.redirectTo);
@@ -55,8 +54,7 @@ const LoginForm = ({ redirectPath }: LoginFormProps) => {
           return;
         }
 
-        // ✅ Successful login with no special redirect
-        router.refresh();
+        // router.refresh();
       } catch (error: any) {
         setServerError(`Login failed: ${error.message}`);
       }
