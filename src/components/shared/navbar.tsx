@@ -40,19 +40,22 @@ export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<IUser | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadUser = async () => {
-      try {
-        const user = await getUserInfo();
-        setCurrentUser(user);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadUser();
-  }, []);
+
+useEffect(() => {
+  const loadUser = async () => {
+    try {
+      setLoading(true);
+      const user = await getUserInfo();
+      setCurrentUser(user);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadUser();
+}, [pathname]);
 
   const isActive = (url: string) =>
     url === "/" ? pathname === "/" : pathname.startsWith(url);
