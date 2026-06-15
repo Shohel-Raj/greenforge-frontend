@@ -1,11 +1,14 @@
+import { fetchCategoriesAction } from '@/app/_actions/_actions'
 import CreateIdeaFormModal from '@/components/shared/form/CreateIdeaFormModal'
 import React from 'react'
 
-function AddIdeaPage() {
-  const categories = [
-    { id: "1", name: "Technology" },
-    { id: "2", name: "Health" },
-  ];
+async function AddIdeaPage() {
+
+
+  const response = await fetchCategoriesAction();
+
+  const categories = response.success ? response.data : []
+  console.log(categories)
   return (
     <CreateIdeaFormModal categories={categories} />
   )

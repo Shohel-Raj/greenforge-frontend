@@ -16,6 +16,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { ICategory } from "@/types/catagory.types";
 import {
   createIdeaFormZodSchema,
   IdeaStatus,
@@ -26,11 +27,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ImagePlus, RotateCcw, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-
-interface ICategory {
-  id: string;
-  name: string;
-}
 
 interface CreateIdeaFormProps {
   categories: ICategory[];
@@ -72,7 +68,8 @@ const FieldMessage = ({ error }: { error: unknown }) => {
 };
 
 const validatePrice = ({ value }: { value: number }) => {
-  const result = createIdeaFormZodSchema.shape.data.shape.price.safeParse(value);
+  const result =
+    createIdeaFormZodSchema.shape.data.shape.price.safeParse(value);
 
   if (result.success) return undefined;
 
@@ -93,42 +90,42 @@ const CreateIdeaForm = ({
   const form = useForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-  if (!value.file) {
-    toast.error("Please choose an image for your idea");
-    return;
-  }
+      if (!value.file) {
+        toast.error("Please choose an image for your idea");
+        return;
+      }
 
-  const formData = new FormData();
+      const formData = new FormData();
 
-  formData.append("file", value.file);
-  formData.append(
-    "data",
-    JSON.stringify({
-      title: value.data.title,
-      problemStatement: value.data.problemStatement,
-      solution: value.data.solution,
-      description: value.data.description,
-      categoryId: value.data.categoryId,
-      status: value.data.status,
-      isPaid: value.data.isPaid,
-      price: value.data.price,
-    }),
-  );
+      formData.append("file", value.file);
+      formData.append(
+        "data",
+        JSON.stringify({
+          title: value.data.title,
+          problemStatement: value.data.problemStatement,
+          solution: value.data.solution,
+          description: value.data.description,
+          categoryId: value.data.categoryId,
+          status: value.data.status,
+          isPaid: value.data.isPaid,
+          price: value.data.price,
+        }),
+      );
 
-  const result = await mutateAsync(formData);
+      const result = await mutateAsync(formData);
 
-  if (!result.success) {
-    toast.error(result.message || "Failed to create idea");
-    return;
-  }
+      if (!result.success) {
+        toast.error(result.message || "Failed to create idea");
+        return;
+      }
 
-  toast.success(result.message || "Your idea was created successfully");
-  form.reset();
+      toast.success(result.message || "Your idea was created successfully");
+      form.reset();
 
-  void queryClient.invalidateQueries({ queryKey: ["ideas"] });
-  void queryClient.refetchQueries({ queryKey: ["ideas"], type: "active" });
-  router.refresh();
-},
+      void queryClient.invalidateQueries({ queryKey: ["ideas"] });
+      void queryClient.refetchQueries({ queryKey: ["ideas"], type: "active" });
+      router.refresh();
+    },
   });
 
   const handleReset = () => {
@@ -197,6 +194,10 @@ const CreateIdeaForm = ({
                       ? field.state.meta.errors[0]
                       : null;
 
+                  const selectedCategory = categories.find(
+                    (category) => category.id === field.state.value,
+                  );
+
                   return (
                     <div className="space-y-1.5">
                       <Label
@@ -209,7 +210,8 @@ const CreateIdeaForm = ({
                       <Select
                         value={field.state.value}
                         onValueChange={(value) => {
-                          field.handleChange(value ?? "");
+                           if (!value) return;
+                          field.handleChange(value);
                           field.handleBlur();
                         }}
                         disabled={isLoadingCategories}
@@ -221,7 +223,9 @@ const CreateIdeaForm = ({
                             firstError && "border-destructive",
                           )}
                         >
-                          <SelectValue placeholder="Choose a category" />
+                          <SelectValue placeholder="Choose a category">
+                            {selectedCategory?.name}
+                          </SelectValue>
                         </SelectTrigger>
 
                         <SelectContent>
@@ -238,7 +242,6 @@ const CreateIdeaForm = ({
                   );
                 }}
               </form.Field>
-
               <form.Field
                 name="data.status"
                 validators={{
@@ -527,33 +530,35 @@ const CreateIdeaForm = ({
               </form.Field>
             </div>
 
-            <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:items-center sm:justify-end w-full">
               <Button
                 type="button"
                 variant="outline"
                 disabled={isPending}
                 onClick={handleReset}
+                className="w-1/2 cursor-pointer "
               >
                 <RotateCcw className="size-4" />
                 Reset Fields
               </Button>
-
-              <form.Subscribe
-                selector={(state) =>
-                  [state.canSubmit, state.isSubmitting] as const
-                }
-              >
-                {([canSubmit, isSubmitting]) => (
-                  <AppSubmitButton
-                    isPending={isSubmitting || isPending}
-                    pendingLabel="Creating idea..."
-                    disabled={!canSubmit || isLoadingCategories}
-                    className="min-w-36"
-                  >
-                    Create Idea
-                  </AppSubmitButton>
-                )}
-              </form.Subscribe>
+              <div className="w-1/2">
+                <form.Subscribe
+                  selector={(state) =>
+                    [state.canSubmit, state.isSubmitting] as const
+                  }
+                >
+                  {([canSubmit, isSubmitting]) => (
+                    <AppSubmitButton
+                      isPending={isSubmitting || isPending}
+                      pendingLabel="Creating idea..."
+                      disabled={!canSubmit || isLoadingCategories}
+                      className={`${isSubmitting || isPending ? "cursor-not-allowed" : "cursor-pointer"}`}
+                    >
+                      Create Idea
+                    </AppSubmitButton>
+                  )}
+                </form.Subscribe>
+              </div>
             </div>
           </form>
         </div>

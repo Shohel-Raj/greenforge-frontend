@@ -3,6 +3,7 @@
 
 import { httpClient } from "@/lib/axios/httpClient";
 import { ApiErrorResponse } from "@/types/api.types";
+import { CategoriesResponseData, FetchCategoriesError, FetchCategoriesSuccess } from "@/types/catagory.types";
 import {
   changePasswordZodSchema,
   IChangePasswordPayload,
@@ -86,7 +87,7 @@ export const createIdeaAction = async (
   }
 
   try {
-    const response = await httpClient.post("/ideas", parsedPayload.data.data, {
+    const response = await httpClient.post("/idea", parsedPayload.data.data, {
       files: {
         file: parsedPayload.data.file as File,
       },
@@ -121,6 +122,24 @@ export const createIdeaAction = async (
     return {
       success: false,
       message,
+    };
+  }
+};
+
+export const fetchCategoriesAction = async (): Promise<
+  FetchCategoriesSuccess | FetchCategoriesError
+> => {
+  try {
+    const response = await httpClient.get<CategoriesResponseData>("/catagory");
+
+    return {
+      success: true,
+      data: response.data.data,
+    };
+  } catch (error: any) {
+    return {
+      success: false,
+      message: error?.response?.data?.message || "Failed to fetch categories",
     };
   }
 };
