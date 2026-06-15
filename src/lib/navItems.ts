@@ -46,8 +46,8 @@ export const memberNavItems : NavSection[] = [
         items : [
             {
                 title : "Add Idea",
-                href : "/member/dashboard/idea",
-                icon : "Calender"
+                href : "/member/dashboard/add-idea",
+                icon : "PlusCircle"
             },
             {
                 title: "Manage Idea",

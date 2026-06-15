@@ -63,6 +63,7 @@ const axiosInstance = async () => {
 export interface ApiRequestOptions {
     params?: Record<string, unknown>;
     headers?: Record<string, string>;
+    files?: Record<string, File>;
 }
 
 const httpGet = async <TData>(endpoint: string, options?: ApiRequestOptions) : Promise<ApiResponse<TData>> => {
